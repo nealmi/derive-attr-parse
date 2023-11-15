@@ -4,9 +4,10 @@ use proc_macro2::Span;
 use syn::meta::ParseNestedMeta;
 use syn::punctuated::Punctuated;
 use syn::{token, Attribute, DeriveInput, Error, Token};
+use crate::parser::ast::{Container, Data, Field, Style, Val, Variant};
 
-use crate::internals::symbol::*;
-use crate::internals::Ctxt;
+use crate::parser::symbol::*;
+use crate::parser::ctxt::Ctxt;
 
 // #[sim(ode_solver = "eula")] V
 // #[sim(ode_solver(algo = "eula", steps = "10"))] V
@@ -18,20 +19,13 @@ use crate::internals::Ctxt;
 
 pub fn root_from_ast<'a>(
     cx: &Ctxt,
-    input: DeriveInput,
+    input: &'a DeriveInput,
     root: Symbol,
 ) -> Result<Container<'a>, Error> {
-    //当一个枚举或结构体被标记为NON_EXHAUSTIVE时，它表示该类型的未来版本可能添加新的变体（对于枚举）或字段（对于结构体），
-    // 而不会被视为破坏性更改。这意味着在编写match语句时，你应该使用_通配符来处理未来可能添加的变化。
     let mut _non_exhaustive = false;
 
     let mut all = HashMap::new();
     for attr in &input.attrs {
-        //bool |= exp 表示将布尔变量（或表达式）的值与表达式的值进行逻辑或运算，并将结果赋值给布尔变量。
-        // 具体而言，如果 bool 变量的值为 true，那么无论表达式 exp 的值是什么，bool 的值都将保持为 true。
-        // 只有在 bool 的值为 false 时，才会考虑表达式 exp 的值。如果 exp 的值为 true，那么 bool 的值将变为 true。
-
-        //只解析 root 类型的 attr
         if attr.path() != root {
             _non_exhaustive |=
                 matches!(&attr.meta, syn::Meta::Path(path) if path == NON_EXHAUSTIVE);
@@ -54,7 +48,7 @@ pub fn root_from_ast<'a>(
         }
         merge_map(cx, attrs, &mut all)
     }
-    let res = data_from_ast(cx, input, root);
+    let res = data_from_ast(cx, &input, root);
     if let Some(data) = res {
         eprintln!("{root} {all:#?}");
         let item = Container {
@@ -62,7 +56,7 @@ pub fn root_from_ast<'a>(
             attrs: all,
             data,
             generics: &input.generics,
-            original: input,
+            original: &input,
         };
 
         Ok(item)
@@ -108,11 +102,7 @@ pub fn parse_sub_attrs(cx: &Ctxt, meta: &ParseNestedMeta) -> syn::Result<HashMap
     Ok(idents)
 }
 
-#[derive(Debug, Clone)]
-pub enum Val {
-    Str(String),
-    Map(HashMap<String, Val>),
-}
+
 
 fn get_lit_str(meta: &ParseNestedMeta) -> syn::Result<Option<String>> {
     let expr: syn::Expr = meta.value()?.parse()?;
@@ -121,9 +111,9 @@ fn get_lit_str(meta: &ParseNestedMeta) -> syn::Result<Option<String>> {
         value = &e.expr;
     }
     if let syn::Expr::Lit(syn::ExprLit {
-        lit: syn::Lit::Str(lit),
-        ..
-    }) = value
+                              lit: syn::Lit::Str(lit),
+                              ..
+                          }) = value
     {
         let suffix = lit.suffix();
         if !suffix.is_empty() {}
@@ -196,11 +186,6 @@ fn parse_attrs(
 ) -> syn::Result<HashMap<String, Val>> {
     let mut all = HashMap::new();
     for attr in attrs {
-        //bool |= exp 表示将布尔变量（或表达式）的值与表达式的值进行逻辑或运算，并将结果赋值给布尔变量。
-        // 具体而言，如果 bool 变量的值为 true，那么无论表达式 exp 的值是什么，bool 的值都将保持为 true。
-        // 只有在 bool 的值为 false 时，才会考虑表达式 exp 的值。如果 exp 的值为 true，那么 bool 的值将变为 true。
-
-        //只解析 root 类型的 attr
         if attr.path() != root {
             continue;
         }
@@ -269,60 +254,5 @@ fn enum_from_ast<'a>(
             }
         })
         .collect();
-
     variants
-}
-
-#[derive(Debug, Clone)]
-pub struct Container<'a> {
-    /// The struct or enum name (without generics).
-    pub ident: syn::Ident,
-    /// Attributes on the structure, parsed for Serde.
-    pub attrs: HashMap<String, Val>,
-    /// The contents of the struct or enum.
-    pub data: Data<'a>,
-    /// Any generics on the struct or enum.
-    pub generics: &'a syn::Generics,
-    /// Original input.
-    pub original: &'a syn::DeriveInput,
-}
-
-/// The fields of a struct or enum.
-///
-/// Analogous to `syn::Data`.
-#[derive(Debug, Clone)]
-pub enum Data<'a> {
-    Enum(Vec<Variant<'a>>),
-    Struct(Style, Vec<Field<'a>>),
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum Style {
-    /// Named fields.
-    Struct,
-    /// Many unnamed fields.
-    Tuple,
-    /// One unnamed field.
-    Newtype,
-    /// No fields.
-    Unit,
-}
-
-/// A variant of an enum.
-#[derive(Debug, Clone)]
-pub struct Variant<'a> {
-    pub ident: syn::Ident,
-    pub attrs: HashMap<String, Val>,
-    pub style: Style,
-    pub fields: Vec<Field<'a>>,
-    pub original: &'a syn::Variant,
-}
-
-/// A field of a struct.
-#[derive(Debug, Clone)]
-pub struct Field<'a> {
-    pub member: syn::Member,
-    pub attrs: HashMap<String, Val>,
-    pub ty: &'a syn::Type,
-    pub original: &'a syn::Field,
 }

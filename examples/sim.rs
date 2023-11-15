@@ -1,5 +1,5 @@
-use simuples_derives::{Fsm, Simuples};
 use std::collections::HashMap;
+use derive_attr_parse::{Fsm, Simuples};
 
 fn main() {}
 
@@ -12,10 +12,10 @@ struct People {
 
 #[derive(Simuples)]
 #[sim(
-    name = "Person",
-    method = "agent",
-    input_name = "PersonInput",
-    output_name = "PersonOutput"
+name = "Person",
+method = "agent",
+input_name = "PersonInput",
+output_name = "PersonOutput"
 )]
 #[allow(dead_code)]
 struct Person {
@@ -29,32 +29,32 @@ struct Person {
 #[allow(dead_code)]
 enum HealthState {
     #[fsm(trans(
-        cond = "Msg::Infected",
-        to = "Exposed(uniform(3..-=6))",
-        event = "Event::Infected"
+    cond = "Msg::Infected",
+    to = "Exposed(uniform(3..-=6))",
+    event = "Event::Infected"
     ))]
     Susceptible,
     #[fsm(trans(
-        cond = "days_left==1",
-        to = "Infectious(uniform(7..-=15))",
-        event = "Event::Illness"
+    cond = "days_left==1",
+    to = "Infectious(uniform(7..-=15))",
+    event = "Event::Illness"
     ))]
     #[fsm(rotate(val = "days_left-=1"))]
     Exposed { days_left: usize },
     #[fsm(trans(
-        cond = "days_left==1",
-        to = "Immune(uniform(30..-=70))",
-        event = "Event::Cure"
+    cond = "days_left==1",
+    to = "Immune(uniform(30..-=70))",
+    event = "Event::Cure"
     ))]
     #[fsm(rotate(
-        val = "days_left-=1",
-        event = "Event::Contact{count:5, probability:10}"
+    val = "days_left-=1",
+    event = "Event::Contact{count:5, probability:10}"
     ))]
     Infectious { days_left: usize },
     #[fsm(trans(
-        cond = "days_left==1",
-        to = "Susceptible",
-        event = "Event::LostImmunity"
+    cond = "days_left==1",
+    to = "Susceptible",
+    event = "Event::LostImmunity"
     ))]
     #[fsm(rotate(val = "days_left-=1"))]
     Immune { days_left: usize },
@@ -62,10 +62,10 @@ enum HealthState {
 
 #[derive(Simuples)]
 #[sim(
-    name = "BassDiffusion",
-    method = "composited",
-    input_name = "BassDiffusionInput",
-    output_name = "BassDiffusionOutput"
+name = "BassDiffusion",
+method = "composited",
+input_name = "BassDiffusionInput",
+output_name = "BassDiffusionOutput"
 )]
 #[allow(dead_code)]
 pub struct BassDiffusion {
@@ -83,11 +83,11 @@ pub struct BassDiffusion {
 #[derive(Simuples, Debug, Clone)]
 #[allow(dead_code)]
 #[sim(
-    name = "Population",
-    method = "system_dynamics",
-    ode_solver = "eula",
-    input_name = "PopulationInput",
-    output_name = "PopulationOutput"
+name = "Population",
+method = "system_dynamics",
+ode_solver = "eula",
+input_name = "PopulationInput",
+output_name = "PopulationOutput"
 )]
 pub struct Population {
     #[sim(param(val = "100_000_0000f64"))]
@@ -98,8 +98,8 @@ pub struct Population {
     move_out_rate: f64,
 
     #[sim(flow(
-        from = "population",
-        val = "population * move_in_rate - population * move_out_rate"
+    from = "population",
+    val = "population * move_in_rate - population * move_out_rate"
     ))]
     population_change: f64,
     #[sim(stock(val = "initial_population"), output(to = "total"))]
@@ -113,11 +113,11 @@ pub struct Id(String);
 #[derive(Simuples, Debug, Clone)]
 #[allow(dead_code)]
 #[sim(
-    name = "test",
-    method = "system_dynamics",
-    ode_solver = "eula",
-    input_name = "BassInput",
-    output_name = "BassOutput"
+name = "test",
+method = "system_dynamics",
+ode_solver = "eula",
+input_name = "BassInput",
+output_name = "BassOutput"
 )]
 #[sim(input(name = "BassInput", ty = "struct"))]
 #[sim(output(name = "BassOutput", ty = "struct"))]
@@ -136,7 +136,7 @@ pub struct Bass {
     #[sim(var(val = "potential_clients * ad_effectiveness"))]
     sales_from_ad: f64,
     #[sim(var(
-        val = "clients * contact_rate * sales_fraction * potential_clients / total_population"
+    val = "clients * contact_rate * sales_fraction * potential_clients / total_population"
     ))]
     sales_from_wom: f64,
 
@@ -148,12 +148,12 @@ pub struct Bass {
 
     //流量 from/to 是 stock，
     #[sim(
-        flow(
-            from = "potential_clients",
-            to = "clients",
-            val = "sales_from_ad + sales_from_wom"
-        ),
-        output(to = "sales")
+    flow(
+    from = "potential_clients",
+    to = "clients",
+    val = "sales_from_ad + sales_from_wom"
+    ),
+    output(to = "sales")
     )]
     sales: f64,
 }
