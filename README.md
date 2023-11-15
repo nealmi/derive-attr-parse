@@ -1,3 +1,3 @@
 ## Derive Attr Parse Demo
 
-The code most copy from serde lib.
+The code mostly copy from serde lib.
