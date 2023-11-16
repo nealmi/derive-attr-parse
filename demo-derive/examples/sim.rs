@@ -159,30 +159,3 @@ pub struct Bass {
     )]
     sales: f64,
 }
-
-/// 仿真推进行为抽象
-pub trait Simulate {
-    type I;
-    //输入类型
-    type O;
-    //输出类型
-    fn push_one_step(&mut self, progress: &Progress, input: &Self::I) -> Self::O;
-}
-
-// 仿真推进信息(tick推进方式）
-#[derive(Debug, Copy, Clone)]
-pub struct Progress {
-    pub step: u64,
-    pub initial_time: u64,
-    pub tick: u32,
-}
-
-impl Default for Progress {
-    fn default() -> Self {
-        Progress {
-            step: u64::default(),
-            initial_time: u64::default(),
-            tick: u32::default(),
-        }
-    }
-}
