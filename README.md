@@ -1,6 +1,6 @@
  # Simple parser for derive attributes
  * "Copy from Giants". The code mostly copied from <https://github.com/serde-rs/serde/tree/master/serde_derive>.
- * "Copy from Copier of Giants". Recommend to COPY the code put into your project for better control .
+ * "Copy from Copier of Giants". The recommendation is to copy the code into your project for better control.
 
  The code too simple to document. Just checkout the code, will do all the talks. 
  ## Typical usage in  proc macro

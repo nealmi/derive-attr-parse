@@ -1,6 +1,7 @@
 //! # Simple parser for derive attributes
 //! * "Copy from Giants". The code mostly copied from <https://github.com/serde-rs/serde/tree/master/serde_derive>.
-//! * "Copy from Copier of Giants". Recommend to COPY the code put into your project for better control .
+//! * "Copy from Copier of Giants". The recommendation is to copy the code into your project for better control.<https://github.com/nealmi/derive-attr-parse>
+//!
 //! ### Typical usage in  proc macro
 //! ```
 //! let input = parse_macro_input!(inputTokenStream as DeriveInput);
