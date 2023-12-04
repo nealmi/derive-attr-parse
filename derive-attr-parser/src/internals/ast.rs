@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{self, Display};
-use syn::{Ident, Path};
+use proc_macro2::Span;
+use syn::{Expr, Ident, Path};
 
 /// The root Container for all
 ///
@@ -66,8 +67,19 @@ pub struct Field<'a> {
 /// const ROOT:Symbol = Symbol("root");
 /// //let root:Container  = from_ast(.. ROOT);
 /// ```
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Symbol(pub &'static str);
+
+impl From<String> for Symbol {
+    fn from(value: String) -> Self {
+        Symbol(value.leak())
+    }
+}
+// impl<'a> From<&'a str> for Symbol {
+//     fn from(value: &'a str) -> Self {
+//         Symbol(value.to_string().leak())
+//     }
+// }
 
 impl PartialEq<Symbol> for Ident {
     fn eq(&self, word: &Symbol) -> bool {
@@ -93,6 +105,12 @@ impl<'a> PartialEq<Symbol> for &'a Path {
     }
 }
 
+impl<'a> PartialEq<Symbol> for &'a String {
+    fn eq(&self, other: &Symbol) -> bool {
+        self.as_str() == other.0
+    }
+}
+
 impl Display for Symbol {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str(self.0)
@@ -107,4 +125,53 @@ pub enum Val {
     Empty,
     Str(String),
     Map(HashMap<String, Val>),
+    Vec(Vec<Val>)
+}
+
+impl Val {
+    pub fn as_ident(&self) -> syn::Result<syn::Ident> {
+        match self {
+            Val::Str(s) => {
+                let idr = syn::parse_str::<syn::Ident>(s.as_str());
+                match idr {
+                    Ok(ident) => { Ok(ident) }
+                    Err(err) => {
+                        Err(syn::Error::new(err.span(), format!("{} #Val.as_indent val={}", err.to_string(), s)))
+                    }
+                }
+            }
+            _ => { Err(syn::Error::new(Span::call_site(), format!("None Val::Str cannot convert to syn::Ident "))) }
+        }
+    }
+    pub fn as_bin_expr(&self) -> syn::Result<syn::ExprBinary> {
+        match self {
+            Val::Str(s) => {
+                let expr = syn::parse_str::<syn::Expr>(s.as_str())?;
+                match expr {
+                    Expr::Binary(bin) => {
+                        Ok(bin)
+                    }
+                    _ => {
+                        let err = syn::Error::new(Span::call_site(), format!("Only Binary Expr (eg. a+b, a*b+c) is supported"));
+                        Err(err)
+                    }
+                }
+            }
+            _ => { Err(syn::Error::new(Span::call_site(), format!("None Val::Str cannot convert to syn::ExprBinary "))) }
+        }
+    }
+    pub fn as_expr(&self) -> syn::Result<syn::Expr> {
+        match self {
+            Val::Str(s) => {
+                let ret = syn::parse_str::<syn::Expr>(s.as_str());
+                match ret {
+                    Ok(expr) => { Ok(expr) }
+                    Err(err) => {
+                        Err(syn::Error::new(err.span(), format!("{} #Val.as_expr val={}", err.to_string(), s)))
+                    }
+                }
+            }
+            _ => { Err(syn::Error::new(Span::call_site(), format!("None Val::Str cannot convert to syn::Expr "))) }
+        }
+    }
 }

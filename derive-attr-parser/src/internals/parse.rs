@@ -103,9 +103,9 @@ fn get_val_str(meta: &ParseNestedMeta) -> syn::Result<Val> {
         value = &e.expr;
     }
     if let syn::Expr::Lit(syn::ExprLit {
-        lit: syn::Lit::Str(lit),
-        ..
-    }) = value
+                              lit: syn::Lit::Str(lit),
+                              ..
+                          }) = value
     {
         let suffix = lit.suffix();
         if !suffix.is_empty() {}
@@ -245,11 +245,23 @@ fn enum_from_ast<'a>(
     variants
 }
 
-fn merge_map(cx: &Ctxt, from: HashMap<String, Val>, to: &mut HashMap<String, Val>) {
+fn merge_map(_cx: &Ctxt, from: HashMap<String, Val>, to: &mut HashMap<String, Val>) {
     for (k, v) in from {
-        if to.get(&k).is_some() {
-            let msg = format!("duplicated key {{{k}}}#merge_map");
-            cx.syn_error(Error::new(Span::call_site(), msg));
+        if let Some(x) = to.get(&k) {
+            eprintln!("duplicated key {{{k}}} #merge_map");
+            let mut vs = vec![];
+            match x {
+                Val::Vec(v) => {
+                    vs.append(&mut v.to_vec())
+                }
+                _ => {
+                    vs.push(x.clone());
+                    vs.push(v);
+                }
+            };
+            to.insert(k, Val::Vec(vs));
+            // let msg = format!("duplicated key {{{k}}}#merge_map");
+            // cx.syn_error(Error::new(Span::call_site(), msg));
         } else {
             to.insert(k, v);
         }
